@@ -34,14 +34,14 @@ spring:
       - taskDefinition
     caffeine:
       spec: maximumSize=100,expireAfterWrite=300s,recordStats
-  sql:
-    init:
-      schema-locations: classpath:sql/dolphinscheduler_h2.sql
-  datasource:
-    driver-class-name: org.h2.Driver
-    url: jdbc:h2:mem:dolphinscheduler;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=true
-    username: sa
-    password: ""
+#  sql:
+#    init:
+#      schema-locations: classpath:sql/dolphinscheduler_h2.sql
+#  datasource:
+#    driver-class-name: org.h2.Driver
+#    url: jdbc:h2:mem:dolphinscheduler;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=true
+#    username: sa
+#    password: ""
   quartz:
     job-store-type: jdbc
     jdbc:
@@ -200,12 +200,12 @@ spring:
 spring:
   config:
     activate:
-      on-profile: mysql
+      on-profile: postgresql
   sql:
      init:
-       schema-locations: classpath:sql/dolphinscheduler_mysql.sql
+       schema-locations: classpath:sql/dolphinscheduler_postgresql.sql
   datasource:
-    driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/dolphinscheduler?useUnicode=true&characterEncoding=UTF-8
-    username: root
-    password: root
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://127.0.0.1:5432/dolphinscheduler
+    username: ark
+    password:

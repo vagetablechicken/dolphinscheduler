@@ -238,7 +238,7 @@ public class PythonTask extends AbstractTaskExecutor {
     private String buildPythonExecuteCommand(String pythonFile) {
         Preconditions.checkNotNull(pythonFile, "Python file cannot be null");
 
-        String pythonHome = String.format("${%s}", PYTHON_HOME);
+        String pythonHome = "/usr/local/bin/python3"; // String.format("${%s}", PYTHON_HOME);
 
         return pythonHome + " " + pythonFile;
     }
