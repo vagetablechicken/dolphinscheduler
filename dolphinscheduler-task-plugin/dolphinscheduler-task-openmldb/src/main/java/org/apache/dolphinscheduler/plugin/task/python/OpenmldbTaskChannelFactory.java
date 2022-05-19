@@ -32,7 +32,7 @@ public class OpenmldbTaskChannelFactory implements TaskChannelFactory {
 
     @Override
     public String getName() {
-        return "PYTHON";
+        return "OPENMLDB";
     }
 
     @Override

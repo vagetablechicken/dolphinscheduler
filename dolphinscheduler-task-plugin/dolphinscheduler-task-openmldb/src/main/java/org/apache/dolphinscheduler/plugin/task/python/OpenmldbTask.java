@@ -82,10 +82,19 @@ public class OpenmldbTask extends AbstractTaskExecutor {
         logger.info("openmldb task params {}", taskRequest.getTaskParams());
 
         openmldbParameters = JSONUtils.parseObject(taskRequest.getTaskParams(), OpenmldbParameters.class);
-        Preconditions.checkNotNull(openmldbParameters);
+
+        assert openmldbParameters != null;
         if (!openmldbParameters.checkParameters()) {
             throw new TaskException("openmldb task params is not valid");
         }
+
+        // TODO(hw): set these parameters by parse json later
+        openmldbParameters.setZk(openmldbParameters.getLocalParametersMap().get("zk").getValue());
+        openmldbParameters.setZkPath(openmldbParameters.getLocalParametersMap().get("zkPath").getValue());
+        openmldbParameters.setExecuteMode(openmldbParameters.getLocalParametersMap().get("executeMode").getValue());
+
+        logger.info(openmldbParameters.toString());
+
     }
 
     @Override
@@ -108,7 +117,7 @@ public class OpenmldbTask extends AbstractTaskExecutor {
             String pythonScriptFile = buildPythonCommandFilePath();
 
             // create this file
-            createPythonCommandFileIfNotExists(pythonScriptContent,pythonScriptFile);
+            createPythonCommandFileIfNotExists(pythonScriptContent, pythonScriptFile);
             String command = buildPythonExecuteCommand(pythonScriptFile);
 
             TaskResponse taskResponse = shellCommandExecutor.run(command);
@@ -169,7 +178,7 @@ public class OpenmldbTask extends AbstractTaskExecutor {
     /**
      * create python command file if not exists
      *
-     * @param pythonScript exec python script
+     * @param pythonScript     exec python script
      * @param pythonScriptFile python script file
      * @throws IOException io exception
      */

@@ -19,35 +19,26 @@ package org.apache.dolphinscheduler.plugin.task.python;
 
 import org.apache.dolphinscheduler.plugin.task.api.model.ResourceInfo;
 import org.apache.dolphinscheduler.plugin.task.api.parameters.AbstractParameters;
-
+import lombok.Data;
 import java.util.List;
 
+@Data
 public class OpenmldbParameters extends AbstractParameters {
     /**
      * origin python script
      */
     private String rawScript;
 
+    private String zk;
+    private String zkPath;
+    private String executeMode;
+    // if run offline job, you can set the timeout. No use when online.
+    private int offlineJobTimeout;
+
     /**
      * resource list
      */
     private List<ResourceInfo> resourceList;
-
-    public String getRawScript() {
-        return rawScript;
-    }
-
-    public void setRawScript(String rawScript) {
-        this.rawScript = rawScript;
-    }
-
-    public List<ResourceInfo> getResourceList() {
-        return resourceList;
-    }
-
-    public void setResourceList(List<ResourceInfo> resourceList) {
-        this.resourceList = resourceList;
-    }
 
     @Override
     public boolean checkParameters() {
