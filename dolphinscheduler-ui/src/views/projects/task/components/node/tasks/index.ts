@@ -34,6 +34,8 @@ import { useDependent } from './use-dependent'
 import { useDataQuality } from './use-data-quality'
 import { useEmr } from './use-emr'
 import { useZeppelin } from './use-zeppelin'
+import { useJupyter } from './use-jupyter'
+import { useOpenmldb } from './use-openmldb'
 
 export default {
   SHELL: useShell,
@@ -54,5 +56,7 @@ export default {
   DEPENDENT: useDependent,
   DATA_QUALITY: useDataQuality,
   EMR: useEmr,
-  ZEPPELIN: useZeppelin
+  ZEPPELIN: useZeppelin,
+  JUPYTER: useJupyter,
+  OPENMLDB: useOpenmldb
 }

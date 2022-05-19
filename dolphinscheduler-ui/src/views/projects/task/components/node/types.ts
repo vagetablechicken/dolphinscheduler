@@ -37,6 +37,7 @@ type SourceType = 'MYSQL' | 'HDFS' | 'HIVE'
 type ModelType = 'import' | 'export'
 type RelationType = 'AND' | 'OR'
 type ITaskType = TaskType
+type IDateType = 'hour' | 'day' | 'week' | 'month'
 
 interface IOption {
   label: string
@@ -289,6 +290,14 @@ interface ITaskParams {
   zeppelinParagraphId?: string
   noteId?: string
   paragraphId?: string
+  condaEnvName?: string
+  inputNotePath?: string
+  outputNotePath?: string
+  parameters?: string
+  kernel?: string
+  engine?: string
+  executionTimeout?: string
+  startTimeout?: string
   processDefinitionCode?: number
   conditionResult?: {
     successNode?: number[]
@@ -297,6 +306,9 @@ interface ITaskParams {
   udfs?: string
   connParams?: string
   targetJobName?: string
+  zk?: string
+  zkPath?: string
+  executeMode?: string
 }
 
 interface INodeData
@@ -383,5 +395,6 @@ export {
   IJsonItem,
   FormRules,
   IJsonItemParams,
-  IResponseJsonItem
+  IResponseJsonItem,
+  IDateType
 }

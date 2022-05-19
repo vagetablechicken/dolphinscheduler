@@ -158,6 +158,12 @@ $bgLight: #ffffff;
     &.icon-zeppelin {
       background-image: url('/images/task-icons/zeppelin.png');
     }
+    &.icon-jupyter {
+      background-image: url('/images/task-icons/jupyter.png');
+    }
+	&.icon-openmldb {
+		background-image: url('/images/task-icons/openmldb.png');
+	  }
   }
 
   &:hover {
@@ -218,6 +224,12 @@ $bgLight: #ffffff;
       }
       &.icon-zeppelin {
         background-image: url('/images/task-icons/zeppelin_hover.png');
+      }
+      &.icon-jupyter {
+        background-image: url('/images/task-icons/jupyter_hover.png');
+      }
+	  &.icon-openmldb {
+        background-image: url('/images/task-icons/openmldb_hover.png');
       }
     }
   }
