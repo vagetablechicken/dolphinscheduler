@@ -38,9 +38,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.google.common.base.Preconditions;
+import org.apache.dolphinscheduler.spi.utils.StringUtils;
 
 /**
  * openmldb task
@@ -61,7 +65,11 @@ public class OpenmldbTask extends AbstractTaskExecutor {
 
     private static final String PYTHON_HOME = "PYTHON_HOME";
 
-    private static final String DEFAULT_PYTHON_VERSION = "python3";
+    /**
+     * python process(openmldb only supports version 3 by default)
+     */
+    private static final String OPENMLDB_PYTHON = "python3";
+    private static final Pattern PYTHON_PATH_PATTERN = Pattern.compile("/bin/python[\\d.]*$");
 
     /**
      * constructor
@@ -87,25 +95,6 @@ public class OpenmldbTask extends AbstractTaskExecutor {
         if (!openmldbParameters.checkParameters()) {
             throw new TaskException("openmldb task params is not valid");
         }
-
-        // TODO(hw): set these parameters by parse json later
-        openmldbParameters.setZk(openmldbParameters.getLocalParametersMap().get("zk").getValue());
-        openmldbParameters.setZkPath(openmldbParameters.getLocalParametersMap().get("zkPath").getValue());
-        openmldbParameters.setExecuteMode(openmldbParameters.getLocalParametersMap().get("executeMode").getValue());
-
-        logger.info(openmldbParameters.toString());
-
-    }
-
-    @Override
-    public String getPreScript() {
-        String rawPythonScript = openmldbParameters.getRawScript().replaceAll("\\r\\n", "\n");
-        try {
-            rawPythonScript = convertPythonScriptPlaceholders(rawPythonScript);
-        } catch (StringIndexOutOfBoundsException e) {
-            logger.error("setShareVar field format error, raw python script : {}", rawPythonScript);
-        }
-        return rawPythonScript;
     }
 
     @Override
@@ -141,38 +130,6 @@ public class OpenmldbTask extends AbstractTaskExecutor {
     @Override
     public AbstractParameters getParameters() {
         return openmldbParameters;
-    }
-
-    /**
-     * convertPythonScriptPlaceholders
-     *
-     * @param rawScript rawScript
-     * @return String
-     * @throws StringIndexOutOfBoundsException substring may throw StringIndexOutOfBoundsException
-     */
-    private static String convertPythonScriptPlaceholders(String rawScript) throws StringIndexOutOfBoundsException {
-        int len = "${setShareVar(${".length();
-        int scriptStart = 0;
-        while ((scriptStart = rawScript.indexOf("${setShareVar(${", scriptStart)) != -1) {
-            int start;
-            int end = rawScript.indexOf('}', scriptStart + len);
-            String prop = rawScript.substring(scriptStart + len, end);
-
-            start = rawScript.indexOf(',', end);
-            end = rawScript.indexOf(')', start);
-
-            String value = rawScript.substring(start + 1, end);
-
-            start = rawScript.indexOf('}', start) + 1;
-            end = rawScript.length();
-
-            String replaceScript = String.format("print(\"${{setValue({},{})}}\".format(\"%s\",%s))", prop, value);
-
-            rawScript = rawScript.substring(0, scriptStart) + replaceScript + rawScript.substring(start, end);
-
-            scriptStart += replaceScript.length();
-        }
-        return rawScript;
     }
 
     /**
@@ -217,7 +174,8 @@ public class OpenmldbTask extends AbstractTaskExecutor {
      * @return raw python script
      */
     private String buildPythonScriptContent() {
-        String rawPythonScript = openmldbParameters.getRawScript().replaceAll("\\r\\n", "\n");
+        // sqls doesn't need \n, use ; to split
+        String rawSqlScript = openmldbParameters.getSql().replaceAll("[\\r]?\\n", " ");
 
         // replace placeholder
         Map<String, Property> paramsMap = ParamUtils.convert(taskRequest, openmldbParameters);
@@ -227,11 +185,45 @@ public class OpenmldbTask extends AbstractTaskExecutor {
         if (MapUtils.isNotEmpty(taskRequest.getParamsMap())) {
             paramsMap.putAll(taskRequest.getParamsMap());
         }
-        rawPythonScript = ParameterUtils.convertParameterPlaceholders(rawPythonScript, ParamUtils.convert(paramsMap));
+        rawSqlScript = ParameterUtils.convertParameterPlaceholders(rawSqlScript, ParamUtils.convert(paramsMap));
+        logger.info("raw sql script : {}", rawSqlScript);
 
-        logger.info("raw python script : {}", openmldbParameters.getRawScript());
+        // convert sql to python script
+        String pythonScript = buildPythonScriptsFromSql(rawSqlScript);
+        logger.info("rendered python script : {}", pythonScript);
 
-        return rawPythonScript;
+        return pythonScript;
+    }
+
+    private String buildPythonScriptsFromSql(String rawSqlScript) {
+        // imports
+        StringBuilder builder = new StringBuilder("import openmldb\nimport sqlalchemy as db\n");
+
+        // connect to openmldb
+        builder.append(String.format("engine = db.create_engine('openmldb:///?zk=%s&zkPath=%s')\n",
+                openmldbParameters.getZk(), openmldbParameters.getZkPath()));
+        builder.append("con = engine.connect()\n");
+
+        // execute mode
+        String executeMode = openmldbParameters.getExecuteMode().toLowerCase(Locale.ROOT);
+        builder.append("con.execute(\"set @@execute_mode='").append(executeMode).append("';" +
+                "\")\n");
+        // offline job should be sync, and set job_timeout to 30min(==server.channel_keep_alive_time).
+        // You can set it longer in sqls.
+        if (executeMode.equals("offline")) {
+            builder.append("con.execute(\"set @@sync_job=true\")\n");
+            builder.append("con.execute(\"set @@job_timeout=1800000\")\n");
+        }
+
+        // split sqls to list
+        for (String sql : rawSqlScript.split(";")) {
+            sql = sql.trim();
+            if (sql.isEmpty()) {
+                continue;
+            }
+            builder.append("con.execute(\"").append(sql).append("\")\n");
+        }
+        return builder.toString();
     }
 
     /**
@@ -244,10 +236,24 @@ public class OpenmldbTask extends AbstractTaskExecutor {
      */
     private String buildPythonExecuteCommand(String pythonFile) {
         Preconditions.checkNotNull(pythonFile, "Python file cannot be null");
-
-        String pythonHome = String.format("${%s}", PYTHON_HOME);
-
-        return pythonHome + " " + pythonFile;
+        return getPythonCommand() + " " + pythonFile;
     }
 
+    public String getPythonCommand() {
+        String pythonHome = System.getenv(PYTHON_HOME);
+        return getPythonCommand(pythonHome);
+    }
+
+    public String getPythonCommand(String pythonHome) {
+        if (StringUtils.isEmpty(pythonHome)) {
+            return OPENMLDB_PYTHON;
+        }
+        // If your python home is "xx/bin/python[xx]", you are forced to use python3
+        String pythonBinPath = "/bin/" + OPENMLDB_PYTHON;
+        Matcher matcher = PYTHON_PATH_PATTERN.matcher(pythonHome);
+        if (matcher.find()) {
+            return matcher.replaceAll(pythonBinPath);
+        }
+        return Paths.get(pythonHome, pythonBinPath).toString();
+    }
 }

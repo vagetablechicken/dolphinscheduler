@@ -25,15 +25,15 @@ import java.util.List;
 @Data
 public class OpenmldbParameters extends AbstractParameters {
     /**
-     * origin python script
+     * origin sql script
      */
-    private String rawScript;
 
     private String zk;
     private String zkPath;
     private String executeMode;
     // if run offline job, you can set the timeout. No use when online.
-    private int offlineJobTimeout;
+//    private int offlineJobTimeout;
+    private String sql;
 
     /**
      * resource list
@@ -42,7 +42,7 @@ public class OpenmldbParameters extends AbstractParameters {
 
     @Override
     public boolean checkParameters() {
-        return rawScript != null && !rawScript.isEmpty();
+        return true;//sql != null && !sql.isEmpty();
     }
 
     @Override
