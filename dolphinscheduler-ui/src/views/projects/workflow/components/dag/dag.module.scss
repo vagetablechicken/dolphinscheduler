@@ -170,6 +170,9 @@ $bgLight: #ffffff;
     &.icon-openmldb {
       background-image: url('/images/task-icons/openmldb.png');
     }
+    &.icon-train {
+      background-image: url('/images/task-icons/train.png');
+    }
   }
 
   &:hover {
@@ -242,6 +245,9 @@ $bgLight: #ffffff;
       }
       &.icon-openmldb {
         background-image: url('/images/task-icons/openmldb_hover.png');
+      }
+      &.icon-train {
+        background-image: url('/images/task-icons/train_hover.png');
       }
     }
   }

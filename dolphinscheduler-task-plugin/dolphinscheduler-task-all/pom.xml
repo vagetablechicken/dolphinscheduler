@@ -171,6 +171,12 @@
             <artifactId>dolphinscheduler-task-openmldb</artifactId>
             <version>${project.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.dolphinscheduler</groupId>
+            <artifactId>dolphinscheduler-task-train</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
 </project>

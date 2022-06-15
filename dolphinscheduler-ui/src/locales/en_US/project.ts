@@ -696,6 +696,19 @@ export default {
       'Please select column, only single column is supported',
     please_enter_threshold_number_is_needed:
       'Please enter threshold number is needed',
-    please_enter_comparison_title: 'please select comparison title'
+    please_enter_comparison_title: 'please select comparison title',
+    train_data_path: 'data path',
+    train_data_path_tips: 'local path, remote path(todo)',
+    train_objective: 'objective',
+    train_label_column: 'label column name',
+    train_label_column_tips: 'only one column name',
+    train_drop_columns: 'drop columns',
+    train_drop_columns_tips:
+      'drop columns before training, format: col1,col2,...',
+    train_model_save_path: 'model save path',
+    train_model_save_path_tips: 'local path, remote path(todo)',
+    train_extra_params: 'extra params of classifier and train',
+    train_extra_params_tips:
+      'support params: seed, testSize; format: k1=v1,k2=v2'
   }
 }

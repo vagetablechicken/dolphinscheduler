@@ -369,6 +369,16 @@ export function formatParams(data: INodeData): {
   if (data.taskType === 'PIGEON') {
     taskParams.targetJobName = data.targetJobName
   }
+
+  if (data.taskType === 'TRAIN') {
+    taskParams.trainDataPath = data.trainDataPath
+    taskParams.objective = data.objective
+    taskParams.labelColumn = data.labelColumn
+    taskParams.dropColumns = data.dropColumns
+    taskParams.modelSavePath = data.modelSavePath
+    taskParams.extraParams = data.extraParams
+  }
+
   let timeoutNotifyStrategy = ''
   if (data.timeoutNotifyStrategy) {
     if (data.timeoutNotifyStrategy.length === 1) {

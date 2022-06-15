@@ -38,6 +38,7 @@ export type TaskType =
   | 'JUPYTER'
   | 'MLFLOW'
   | 'OPENMLDB'
+  | 'TRAIN'
 
 export const TASK_TYPES_MAP = {
   SHELL: {
@@ -117,6 +118,10 @@ export const TASK_TYPES_MAP = {
   },
   OPENMLDB: {
     alias: 'OPENMLDB',
+    helperLinkDisable: true
+  },
+  TRAIN: {
+    alias: 'TRAIN',
     helperLinkDisable: true
   }
 } as { [key in TaskType]: { alias: string; helperLinkDisable?: boolean } }

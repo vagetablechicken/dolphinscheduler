@@ -682,6 +682,10 @@ export default {
     please_enter_filter_expression: '请输入源表过滤条件',
     please_enter_column_only_single_column_is_supported: '请选择源表检测列',
     please_enter_threshold_number_is_needed: '请输入阈值',
-    please_enter_comparison_title: '请选择期望值类型'
+    please_enter_comparison_title: '请选择期望值类型',
+    train_objective: 'objective', // TODO(hw): select one, default is binary:logistic
+    train_label_column: 'label column name',
+    train_drop_columns: 'drop columns',
+    train_extra_params: 'extra params of classifier and train'
   }
 }

@@ -341,6 +341,12 @@ interface ITaskParams {
   zk?: string
   zkPath?: string
   executeMode?: string
+  trainDataPath?: string
+  objective?: string
+  labelColumn?: string
+  dropColumns?: string
+  modelSavePath?: string
+  extraParams?: string
 }
 
 interface INodeData

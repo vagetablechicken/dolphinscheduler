@@ -38,6 +38,7 @@ import { useK8s } from './use-k8s'
 import { useJupyter } from './use-jupyter'
 import { useMlflow } from './use-mlflow'
 import { useOpenmldb } from './use-openmldb'
+import { useTrain } from './use-train'
 
 export default {
   SHELL: useShell,
@@ -62,5 +63,6 @@ export default {
   K8S: useK8s,
   JUPYTER: useJupyter,
   MLFLOW: useMlflow,
-  OPENMLDB: useOpenmldb
+  OPENMLDB: useOpenmldb,
+  TRAIN: useTrain
 }
