@@ -108,30 +108,46 @@ public class TrainTask extends PythonTask {
                 "import os\n" +
                 "import pandas as pd\n" +
                 "import xgboost as xgb\n" +
-                "from xgboost.sklearn import XGBClassifier\n" +
                 "from sklearn.model_selection import train_test_split\n" +
                 "from sklearn.metrics import classification_report\n" +
-                "from sklearn.metrics import accuracy_score\n\n");
+                "from sklearn.metrics import accuracy_score\n");
+
+        // import which algo
+        String algo = trainParameters.getTrainAlgo();
+        String modelCreatePrefix;
+        switch (algo) {
+            case "XGBClassifier":
+                builder.append("from xgboost.sklearn import XGBClassifier\n");
+                modelCreatePrefix = "train_model = XGBClassifier(";
+                break;
+            case "LogisticRegression": // TODO(hw): support later
+            default:
+                throw new TaskException("unsupported algo" + algo);
+        }
 
         // read dataset
         builder.append(readDataScript(trainParameters.getTrainDataPath()));
         // modify columns
-        builder.append(prepareDataAndLabel(trainParameters.getLabelColumn(), trainParameters.getDropColumns()));
+        builder.append(prepareDataAndLabel(trainParameters.getLabelColumn()));
         // split train and test data
         builder.append(splitTrainTest(trainParameters.getExtraParams()));
 
-        String objective = trainParameters.getObjective();
-        if (objective.equalsIgnoreCase("binary:logistic")) {
-            builder.append("train_model = XGBClassifier().fit(X_train, y_train)\n" +
-                    "pred = train_model.predict(X_test)\n" +
-                    "print(\"Classification report:\\n\", classification_report(y_test, pred))\n" +
-                    "print(\"Accuracy: %.2f\" % (accuracy_score(y_test, pred) * 100))\n");
-        } else {
-            throw new TaskException("objective " + objective + "unsupported");
+        String objective = trainParameters.getTrainObjective();
+        builder.append(modelCreatePrefix);
+        if (objective != null && !objective.isEmpty()) {
+            builder.append("objective=").append(objective);
         }
+        builder.append(")\n");
+
+        // training part
+        builder.append("train_model.fit(X_train, y_train)\n")
+                .append("pred = train_model.predict(X_test)\n")
+                .append("print(\"Classification report:\\n\", classification_report(y_test, pred))\n")
+                .append("print(\"Accuracy: %.2f\" % (accuracy_score(y_test, pred) * 100))\n");
+
         String modelSavePath = trainParameters.getModelSavePath();
         if (modelSavePath == null || !modelSavePath.startsWith("/")) {
-            throw new TaskException("remote save path is unsupported");
+            throw new TaskException("null or remote save path is unsupported");
         }
         builder.append(String.format("print('Save model.json to ', '%s')\n" +
                 "train_model.save_model('%s')\n", modelSavePath, modelSavePath));
@@ -156,18 +172,9 @@ public class TrainTask extends PythonTask {
         return builder.toString();
     }
 
-    private String prepareDataAndLabel(String labelColumn, String dropColumns) {
-        StringBuilder builder = new StringBuilder();
-        builder.append("X_data = train_df.drop('").append(labelColumn).append("', axis=1)\n");
-        if (dropColumns != null && !dropColumns.isEmpty()) {
-            // col1, col2, ...
-            for (String col : dropColumns.split(",")) {
-                col = col.trim();
-                builder.append("X_data = X_data.drop('").append(col).append("', axis=1)\n");
-            }
-        }
-        builder.append("y = train_df.").append(labelColumn).append("\n");
-        return builder.toString();
+    private String prepareDataAndLabel(String labelColumn) {
+        return "X_data = train_df.drop('" + labelColumn + "', axis=1)\n" +
+                "y = train_df." + labelColumn + "\n";
     }
 
     private String splitTrainTest(String extraParams) {

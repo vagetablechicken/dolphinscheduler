@@ -372,7 +372,8 @@ export function formatParams(data: INodeData): {
 
   if (data.taskType === 'TRAIN') {
     taskParams.trainDataPath = data.trainDataPath
-    taskParams.objective = data.objective
+    taskParams.trainAlgo = data.trainAlgo
+    taskParams.trainObjective = data.trainObjective
     taskParams.labelColumn = data.labelColumn
     taskParams.dropColumns = data.dropColumns
     taskParams.modelSavePath = data.modelSavePath

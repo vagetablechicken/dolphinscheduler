@@ -25,10 +25,10 @@ import java.util.List;
 
 public class TrainParameters extends AbstractParameters {
 
-    private String trainDataPath;
-    private String objective;
+    private String trainDataPath; // TODO(hw): save to remote, local path
+    private String trainAlgo;
+    private String trainObjective;
     private String labelColumn;
-    private String dropColumns; // col1,col2,...
     private String extraParams; // TODO(hw): seed=7,testSize=0.25
 
     private String modelSavePath; // TODO(hw): save to remote, local path
@@ -55,12 +55,12 @@ public class TrainParameters extends AbstractParameters {
         return this.resourceList;
     }
 
-    public String getObjective() {
-        return objective;
+    public String getTrainObjective() {
+        return trainObjective;
     }
 
-    public void setObjective(String objective) {
-        this.objective = objective;
+    public void setTrainObjective(String trainObjective) {
+        this.trainObjective = trainObjective;
     }
 
     public String getLabelColumn() {
@@ -69,14 +69,6 @@ public class TrainParameters extends AbstractParameters {
 
     public void setLabelColumn(String labelColumn) {
         this.labelColumn = labelColumn;
-    }
-
-    public String getDropColumns() {
-        return dropColumns;
-    }
-
-    public void setDropColumns(String dropColumns) {
-        this.dropColumns = dropColumns;
     }
 
     public String getExtraParams() {
@@ -101,5 +93,13 @@ public class TrainParameters extends AbstractParameters {
 
     public void setModelSavePath(String modelSavePath) {
         this.modelSavePath = modelSavePath;
+    }
+
+    public String getTrainAlgo() {
+        return trainAlgo;
+    }
+
+    public void setTrainAlgo(String trainAlgo) {
+        this.trainAlgo = trainAlgo;
     }
 }

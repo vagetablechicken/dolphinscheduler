@@ -342,7 +342,8 @@ interface ITaskParams {
   zkPath?: string
   executeMode?: string
   trainDataPath?: string
-  objective?: string
+  trainAlgo?: string
+  trainObjective?: string
   labelColumn?: string
   dropColumns?: string
   modelSavePath?: string

@@ -683,9 +683,17 @@ export default {
     please_enter_column_only_single_column_is_supported: '请选择源表检测列',
     please_enter_threshold_number_is_needed: '请输入阈值',
     please_enter_comparison_title: '请选择期望值类型',
-    train_objective: 'objective', // TODO(hw): select one, default is binary:logistic
-    train_label_column: 'label column name',
-    train_drop_columns: 'drop columns',
-    train_extra_params: 'extra params of classifier and train'
+    train_data_path: '特征数据路径',
+    train_data_path_tips: '本地路径 local path, remote path(todo)',
+    train_algo: '算法',
+    train_objective: 'objective',
+    train_objective_tips: '为空，使用默认objective',
+    train_label_column: '特征标签列名',
+    train_label_column_tips: 'only one column name',
+    train_model_save_path: 'model save path',
+    train_model_save_path_tips: 'local path, remote path(todo)',
+    train_extra_params: 'extra params of classifier and train',
+    train_extra_params_tips:
+      'support params: seed, testSize; format: k1=v1,k2=v2'
   }
 }

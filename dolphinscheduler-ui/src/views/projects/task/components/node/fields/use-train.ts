@@ -14,12 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {useI18n} from 'vue-i18n'
-import {useCustomParams, useResources} from '.'
-import type {IJsonItem} from '../types'
+import { useI18n } from 'vue-i18n'
+import { useCustomParams, useResources } from '.'
+import type { IJsonItem } from '../types'
 
 export function useTrain(model: { [field: string]: any }): IJsonItem[] {
-  const {t} = useI18n()
+  const { t } = useI18n()
 
   return [
     {
@@ -36,12 +36,21 @@ export function useTrain(model: { [field: string]: any }): IJsonItem[] {
       }
     },
     {
-      type: 'select', // TODO(hw): string?
-      field: 'objective',
+      type: 'select',
+      field: 'trainAlgo',
+      span: 12,
+      name: t('project.node.train_algo'),
+      options: ALGO_TYPES,
+      value: 'XGBClassifier'
+    },
+    {
+      type: 'input',
+      field: 'trainObjective',
       span: 12,
       name: t('project.node.train_objective'),
-      options: OBJECTIVE_TYPES,
-      value: 'binary:logistic'
+      props: {
+        placeholder: t('project.node.train_objective_tips')
+      }
     },
     {
       type: 'input',
@@ -49,19 +58,6 @@ export function useTrain(model: { [field: string]: any }): IJsonItem[] {
       name: t('project.node.train_label_column'),
       props: {
         placeholder: t('project.node.train_label_column_tips')
-      },
-      validate: {
-        trigger: ['input', 'trigger'],
-        required: true,
-        message: t('project.node.train_label_column_tips')
-      }
-    },
-    {
-      type: 'input',
-      field: 'dropColumns',
-      name: t('project.node.train_drop_columns'),
-      props: {
-        placeholder: t('project.node.train_drop_columns_tips')
       }
     },
     {
@@ -86,13 +82,18 @@ export function useTrain(model: { [field: string]: any }): IJsonItem[] {
       }
     },
     useResources(),
-    ...useCustomParams({model, field: 'localParams', isSimple: false})
+    ...useCustomParams({ model, field: 'localParams', isSimple: false })
   ]
 }
 
-const OBJECTIVE_TYPES = [
+// TODO(hw): label: 'LGBMClassifier' -> lightgbm.LGBMClassifier
+export const ALGO_TYPES = [
   {
-    label: 'binary:logistic',
-    value: 'binary:logistic'
+    label: 'XGBClassifier',
+    value: 'XGBClassifier'
+  },
+  {
+    label: 'LogisticRegression',
+    value: 'LogisticRegression'
   }
 ]

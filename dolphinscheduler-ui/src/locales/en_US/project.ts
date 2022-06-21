@@ -699,12 +699,12 @@ export default {
     please_enter_comparison_title: 'please select comparison title',
     train_data_path: 'data path',
     train_data_path_tips: 'local path, remote path(todo)',
+    train_algo: 'algorithm',
     train_objective: 'objective',
+    train_objective_tips: 'if empty, use default objective',
     train_label_column: 'label column name',
-    train_label_column_tips: 'only one column name',
-    train_drop_columns: 'drop columns',
-    train_drop_columns_tips:
-      'drop columns before training, format: col1,col2,...',
+    train_label_column_tips:
+      'only one column name, if no value, the first column will be the label',
     train_model_save_path: 'model save path',
     train_model_save_path_tips: 'local path, remote path(todo)',
     train_extra_params: 'extra params of classifier and train',
