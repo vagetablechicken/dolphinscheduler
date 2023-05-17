@@ -114,24 +114,32 @@ public class OpenmldbTask extends PythonTask {
         builder.append(String.format("engine = db.create_engine('openmldb:///?zk=%s&zkPath=%s')\n",
                 openmldbParameters.getZk(), openmldbParameters.getZkPath()));
         builder.append("con = engine.connect()\n");
+        // def sql result handler, if no rs return, assert no error
+        String indent = "    ";
+        builder.append("\n\ndef exec(sql):\n")
+                .append(indent).append("cr = con.execute(sql)\n")
+                .append(indent)
+                .append("rs = cr.fetchall() if cr.rowcount > 0 else None; assert not rs or (len(rs)==1 and rs[0][2].lower()==\"finished\"), f\"job info {rs}\"\n")
+                .append("\n\n");
 
         // execute mode
         String executeMode = openmldbParameters.getExecuteMode().toLowerCase(Locale.ROOT);
-        builder.append("con.execute(\"set @@execute_mode='").append(executeMode).append("';\")\n");
-        // offline job should be sync, and set job_timeout to 30min(==server.channel_keep_alive_time).
+        builder.append("exec(\"set @@execute_mode='").append(executeMode).append("'\")\n");
+        // offline or online load job should be sync
+        builder.append("exec(\"set @@sync_job=true\")\n");
+        // TODO(hw): newer sdk doesn't need to set timeout when sync job
         // You can set it longer in sqls.
-        if (executeMode.equals("offline")) {
-            builder.append("con.execute(\"set @@sync_job=true\")\n");
-            builder.append("con.execute(\"set @@job_timeout=1800000\")\n");
-        }
+        builder.append("exec(\"set @@job_timeout=1800000\")\n");
 
         // split sql to list
         // skip the sql only has space characters
         Pattern pattern = Pattern.compile("\\S");
         for (String sql : rawSqlScript.split(";")) {
             if (pattern.matcher(sql).find()) {
-                sql = sql.replaceAll("\\n", "\\\\n");
-                builder.append("con.execute(\"").append(sql).append("\")\n");
+                // remove head and tail whitespaces and escape \n in the middle of sql
+                sql = sql.trim().replaceAll("\\n", "\\\\n");
+                // what if ddl no result?
+                builder.append("exec(\"").append(sql).append("\")\n");
             }
         }
         return builder.toString();
@@ -139,7 +147,8 @@ public class OpenmldbTask extends PythonTask {
 
     /**
      * Build the python task command.
-     * If user have set the 'PYTHON_HOME' environment, we will use the 'PYTHON_HOME',
+     * If user have set the 'PYTHON_HOME' environment, we will use the
+     * 'PYTHON_HOME',
      * if not, we will default use python.
      *
      * @param pythonFile Python file, cannot be empty.
