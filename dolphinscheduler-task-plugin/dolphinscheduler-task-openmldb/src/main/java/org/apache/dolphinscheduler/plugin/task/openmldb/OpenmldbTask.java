@@ -136,10 +136,10 @@ public class OpenmldbTask extends PythonTask {
         Pattern pattern = Pattern.compile("\\S");
         for (String sql : rawSqlScript.split(";")) {
             if (pattern.matcher(sql).find()) {
-                // remove head and tail whitespaces and escape \n in the middle of sql
-                sql = sql.trim().replaceAll("\\n", "\\\\n");
-                // what if ddl no result?
-                builder.append("exec(\"").append(sql).append("\")\n");
+                // remove head and tail whitespaces
+                sql = sql.trim();
+                // no extra escape for python
+                builder.append("exec(\"\"\"").append(sql).append("\"\"\")\n");
             }
         }
         return builder.toString();

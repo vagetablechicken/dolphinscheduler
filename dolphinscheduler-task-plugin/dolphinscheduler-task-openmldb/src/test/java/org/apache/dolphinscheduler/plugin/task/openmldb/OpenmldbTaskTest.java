@@ -92,8 +92,8 @@ public class OpenmldbTaskTest {
                 + "exec(\"set @@execute_mode='offline'\")\n"
                 + "exec(\"set @@sync_job=true\")\n"
                 + "exec(\"set @@job_timeout=1800000\")\n"
-                + "exec(\"select * from users\\n-- some comment\\ninner join order on users.order_id = order.id\")\n"
-                + "exec(\"select * from users\")\n", result1);
+                + "exec(\"\"\"select * from users\n-- some comment\ninner join order on users.order_id = order.id\"\"\")\n"
+                + "exec(\"\"\"select * from users\"\"\")\n", result1);
     }
 
     @Test
@@ -126,9 +126,9 @@ public class OpenmldbTaskTest {
                 + "exec(\"set @@execute_mode='offline'\")\n"
                 + "exec(\"set @@sync_job=true\")\n"
                 + "exec(\"set @@job_timeout=1800000\")\n"
-                + "exec(\"CREATE DATABASE IF NOT EXISTS demo_db\")\n"
-                + "exec(\"USE demo_db\")\n"
-                + "exec(\"CREATE TABLE IF NOT EXISTS talkingdata(\\n    ip int,\\n    app int,\\n    device int,\\n    os int,\\n    channel int,\\n    click_time timestamp,\\n    is_attributed int)\")\n",
+                + "exec(\"\"\"CREATE DATABASE IF NOT EXISTS demo_db\"\"\")\n"
+                + "exec(\"\"\"USE demo_db\"\"\")\n"
+                + "exec(\"\"\"CREATE TABLE IF NOT EXISTS talkingdata(\n    ip int,\n    app int,\n    device int,\n    os int,\n    channel int,\n    click_time timestamp,\n    is_attributed int)\"\"\")\n",
                 result1);
     }
 
@@ -162,9 +162,56 @@ public class OpenmldbTaskTest {
                 + "exec(\"set @@execute_mode='offline'\")\n"
                 + "exec(\"set @@sync_job=true\")\n"
                 + "exec(\"set @@job_timeout=1800000\")\n"
-                + "exec(\"USE demo_db\")\n"
-                + "exec(\"set @@job_timeout=600000\")\n"
-                + "exec(\"LOAD DATA INFILE 'file:///tmp/train_sample.csv' \\nINTO TABLE talkingdata OPTIONS(mode='overwrite',\\n deep_copy=false)\")\n",
+                + "exec(\"\"\"USE demo_db\"\"\")\n"
+                + "exec(\"\"\"set @@job_timeout=600000\"\"\")\n"
+                + "exec(\"\"\"LOAD DATA INFILE 'file:///tmp/train_sample.csv' \nINTO TABLE talkingdata OPTIONS(mode='overwrite',\n deep_copy=false)\"\"\")\n",
+                result1);
+    }
+
+    @Test
+    public void buildSQLOfflineFE() throws Exception {
+        TaskExecutionContext taskExecutionContext = Mockito.mock(TaskExecutionContext.class);
+        OpenmldbParameters openmldbParameters = new OpenmldbParameters();
+        openmldbParameters.setExecuteMode("offline");
+        openmldbParameters.setZk("localhost:2181");
+        openmldbParameters.setZkPath("/openmldb");
+        String rawSQLScript =
+                "USE demo_db;\nselect is_attributed, app, device, os, channel, hour(click_time) as hour, day(click_time) as day,\n"
+                        + " count(channel) over w1 as qty,\n count(channel) over w2 as ip_app_count,\n count(channel) over w3 as ip_app_os_count\n"
+                        + ", if_null(\"hello\", \"default\"), if_null('hello', 'default') "
+                        + " from demo_db.talkingdata\n window\n w1 as (partition by ip order by click_time ROWS_RANGE BETWEEN 1h PRECEDING AND CURRENT ROW),\n"
+                        + " w2 as(partition by ip, app order by click_time ROWS_RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW),\n"
+                        + " w3 as(partition by ip, app, os order by click_time ROWS_RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)\n"
+                        + "INTO OUTFILE '/tmp/train_feature' OPTIONS(mode='overwrite');\n";
+        openmldbParameters.setSql(rawSQLScript);
+        Mockito.when(taskExecutionContext.getTaskParams()).thenReturn(JSONUtils.toJsonString(openmldbParameters));
+        OpenmldbTask openmldbTask = new OpenmldbTask(taskExecutionContext);
+        openmldbTask.init();
+        OpenmldbParameters internal = (OpenmldbParameters) openmldbTask.getParameters();
+        Assertions.assertNotNull(internal);
+        Assertions.assertEquals(internal.getExecuteMode(), "offline");
+
+        String result1 = openmldbTask.buildPythonScriptContent();
+        Assertions.assertEquals("import openmldb\n"
+                + "import sqlalchemy as db\n"
+                + "engine = db.create_engine('openmldb:///?zk=localhost:2181&zkPath=/openmldb')\n"
+                + "con = engine.connect()\n"
+                + "\n\n"
+                + "def exec(sql):\n"
+                + "    cr = con.execute(sql)\n"
+                + "    rs = cr.fetchall() if cr.rowcount > 0 else None; assert not rs or (len(rs)==1 and rs[0][2].lower()==\"finished\"), f\"job info {rs}\"\n"
+                + "\n\n"
+                + "exec(\"set @@execute_mode='offline'\")\n"
+                + "exec(\"set @@sync_job=true\")\n"
+                + "exec(\"set @@job_timeout=1800000\")\n"
+                + "exec(\"\"\"USE demo_db\"\"\")\n"
+                + "exec(\"\"\"select is_attributed, app, device, os, channel, hour(click_time) as hour, day(click_time) as day,\n"
+                + " count(channel) over w1 as qty,\n count(channel) over w2 as ip_app_count,\n count(channel) over w3 as ip_app_os_count\n"
+                + ", if_null(\"hello\", \"default\"), if_null('hello', 'default') "
+                + " from demo_db.talkingdata\n window\n w1 as (partition by ip order by click_time ROWS_RANGE BETWEEN 1h PRECEDING AND CURRENT ROW),\n"
+                + " w2 as(partition by ip, app order by click_time ROWS_RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW),\n"
+                + " w3 as(partition by ip, app, os order by click_time ROWS_RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)\n"
+                + "INTO OUTFILE '/tmp/train_feature' OPTIONS(mode='overwrite')\"\"\")\n",
                 result1);
     }
 
@@ -198,8 +245,8 @@ public class OpenmldbTaskTest {
                 + "exec(\"set @@execute_mode='online'\")\n"
                 + "exec(\"set @@sync_job=true\")\n"
                 + "exec(\"set @@job_timeout=1800000\")\n"
-                + "exec(\"USE demo_db\")\n"
-                + "exec(\"DEPLOY demo select is_attributed, app, device, os, channel, hour(click_time) as hour, day(click_time) as day,\\n count(channel) over w1 as qty,\\n count(channel) over w2 as ip_app_count,\\n count(channel) over w3 as ip_app_os_count\\n from talkingdata\\n window\\n w1 as (partition by ip order by click_time ROWS_RANGE BETWEEN 1h PRECEDING AND CURRENT ROW),\\n w2 as(partition by ip, app order by click_time ROWS_RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW),\\n w3 as(partition by ip, app, os order by click_time ROWS_RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)\")\n",
+                + "exec(\"\"\"USE demo_db\"\"\")\n"
+                + "exec(\"\"\"DEPLOY demo select is_attributed, app, device, os, channel, hour(click_time) as hour, day(click_time) as day,\n count(channel) over w1 as qty,\n count(channel) over w2 as ip_app_count,\n count(channel) over w3 as ip_app_os_count\n from talkingdata\n window\n w1 as (partition by ip order by click_time ROWS_RANGE BETWEEN 1h PRECEDING AND CURRENT ROW),\n w2 as(partition by ip, app order by click_time ROWS_RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW),\n w3 as(partition by ip, app, os order by click_time ROWS_RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)\"\"\")\n",
                 result1);
     }
 
@@ -233,8 +280,8 @@ public class OpenmldbTaskTest {
                 + "exec(\"set @@execute_mode='online'\")\n"
                 + "exec(\"set @@sync_job=true\")\n"
                 + "exec(\"set @@job_timeout=1800000\")\n"
-                + "exec(\"USE demo_db\")\n"
-                + "exec(\"LOAD DATA INFILE 'file:///tmp/train_sample.csv' \\nINTO TABLE talkingdata OPTIONS(mode='append')\")\n",
+                + "exec(\"\"\"USE demo_db\"\"\")\n"
+                + "exec(\"\"\"LOAD DATA INFILE 'file:///tmp/train_sample.csv' \nINTO TABLE talkingdata OPTIONS(mode='append')\"\"\")\n",
                 result1);
     }
 }
